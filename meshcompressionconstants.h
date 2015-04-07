@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2014-2015, Conor Stokes
+Copyright (c) 2015, Conor Stokes
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -22,22 +22,30 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-#ifndef INDEX_BUFFER_DECOMPRESSION_H__
-#define INDEX_BUFFER_DECOMPRESSION_H__
+#ifndef MESH_COMPRESSION_CONSTANTS_H__
+#define MESH_COMPRESSION_CONSTANTS_H__
 #pragma once
 
 #include <stdint.h>
-#include "readbitstream.h"
 
-// Compress an index buffer, writing the results out to a bitstream and providing a vertex remapping (which will be in pre-transform cache optimised
-// order.
-// Parameters: 
-//     [out] triangles      - Triangle list index buffer (3 indices to vertices per triangle), output from the decompression - 16bit indices
-//     [in]  triangle count - The number of triangles to decompress.
-//     [in]  input          - The bit stream that the compressed data will be read from.
-void DecompressIndexBuffer( uint16_t* triangles, uint32_t triangleCount, ReadBitstream& input );
+// This is the k sized used for encoding the first vertex in a NEW NEW NEW case.
+// It's not really that important, as it is a rare case, but this value 
+// is definitely not optimal.
+const uint32_t EXP_GOLOMB_FIRST_NEW_K = 15;
 
-// Same as above but 32 bit indices.
-void DecompressIndexBuffer( uint32_t* triangles, uint32_t triangleCount, ReadBitstream& input );
+// Edge in the edge fifo with an extra vertex for the opposing triangle.
+struct EdgeTriangle
+{
+	void set( uint32_t f, uint32_t s, uint32_t t )
+	{
+		first = f;
+		second = s;
+		third = t;
+	}
 
-#endif // -- INDEX_BUFFER_DECOMPRESSION_H__
+	uint32_t first;
+	uint32_t second;
+	uint32_t third;
+};
+
+#endif 

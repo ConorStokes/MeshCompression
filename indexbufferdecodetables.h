@@ -24,7 +24,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 // NOTE - these tables are in this file for readability / navagability and should *only* be included in
-// indexbufferdecompression.cpp
+// indexbufferdecompression.cpp for index buffer compression and meshdecompression.cpp for mesh compression
 
 #pragma once
 
