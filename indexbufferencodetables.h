@@ -26,7 +26,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // NOTE - these tables are in this file for readability / navagability and should *only* be included in
 // indexbuffercompression.cpp for index buffer compression and meshcompression.cpp for mesh compression
 
-
 #pragma once
 
 // Individual vertex type classifications.
@@ -194,57 +193,57 @@ static const PrefixCode EdgePrefixCodes[] =
 // Prefix code table used for vertices
 static const PrefixCode CachedVertexPrefixCodes[] =
 {
-	{ 215, 8 },
-	{ 0, 1 },
-	{ 5, 3 },
-	{ 3, 4 },
-	{ 15, 5 },
-	{ 11, 5 },
-	{ 9, 5 },
-	{ 1, 5 },
-	{ 55, 6 },
-	{ 39, 6 },
-	{ 27, 6 },
-	{ 25, 6 },
-	{ 17, 6 },
-	{ 63, 7 },
-	{ 31, 7 },
-	{ 23, 7 },
-	{ 7, 7 },
-	{ 59, 7 },
-	{ 121, 7 },
-	{ 113, 7 },
-	{ 49, 7 },
-	{ 255, 8 },
-	{ 127, 8 },
-	{ 223, 8 },
-	{ 95, 8 },
-	{ 87, 8 },
-	{ 199, 8 },
-	{ 71, 8 },
-	{ 251, 8 },
-	{ 123, 8 },
-	{ 185, 8 },
-	{ 57, 8 }
+    { 215, 8 },
+    { 0, 1 },
+    { 5, 3 },
+    { 3, 4 },
+    { 15, 5 },
+    { 11, 5 },
+    { 9, 5 },
+    { 1, 5 },
+    { 55, 6 },
+    { 39, 6 },
+    { 27, 6 },
+    { 25, 6 },
+    { 17, 6 },
+    { 63, 7 },
+    { 31, 7 },
+    { 23, 7 },
+    { 7, 7 },
+    { 59, 7 },
+    { 121, 7 },
+    { 113, 7 },
+    { 49, 7 },
+    { 255, 8 },
+    { 127, 8 },
+    { 223, 8 },
+    { 95, 8 },
+    { 87, 8 },
+    { 199, 8 },
+    { 71, 8 },
+    { 251, 8 },
+    { 123, 8 },
+    { 185, 8 },
+    { 57, 8 }
 };
 
 // Prefix code table used for triangles
 static const PrefixCode TrianglePrefixCodes[] =
 {
-	{ 0, 1 },
-	{ 3, 2 },
-	{ 5, 3 },
-	{ 49, 7 },
-	{ 33, 7 },
-	{ 81, 7 },
-	{ 9, 5 },
-	{ 113, 7 },
-	{ 57, 7 },
-	{ 25, 6 },
-	{ 121, 7 },
-	{ 17, 7 },
-	{ 1, 6 },
-	{ 97, 7 }
+    { 0, 1 },
+    { 3, 2 },
+    { 5, 3 },
+    { 49, 7 },
+    { 33, 7 },
+    { 81, 7 },
+    { 9, 5 },
+    { 113, 7 },
+    { 57, 7 },
+    { 25, 6 },
+    { 121, 7 },
+    { 17, 7 },
+    { 1, 6 },
+    { 97, 7 }
 };
 
 // Constant value for vertices that don't get mapped in the vertex re-map.

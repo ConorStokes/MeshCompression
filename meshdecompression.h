@@ -42,37 +42,37 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //     [out] vertexAttributes     - The decompressed vertex attributes.
 //     [in]  input                - The bit stream that the compressed data will be read from.
 void DecompressMesh(
-	uint32_t* triangles,
-	uint32_t triangleCount,
-	uint32_t vertexAttributeCount,
-	int32_t* vertexAttributes,
-	ReadBitstream& input );
+    uint32_t* triangles,
+    uint32_t triangleCount,
+    uint32_t vertexAttributeCount,
+    int32_t* vertexAttributes,
+    ReadBitstream& input );
 
 // Same as above but 16 bit indices.
 void DecompressMesh(
-	uint16_t* triangles,
-	uint32_t triangleCount,
-	uint32_t vertexAttributeCount,
-	int32_t* vertexAttributes,
-	ReadBitstream& input );
+    uint16_t* triangles,
+    uint32_t triangleCount,
+    uint32_t vertexAttributeCount,
+    int32_t* vertexAttributes,
+    ReadBitstream& input );
 
 // Same as above but 32 bit indices and 16 bit vertex attributes.
 // For 16 bit vertex attributes, the maximum recommended range is -2^14 to 2^14 - 1 
 // While this is inside the normal 16 bit range, the decoding gets a performance boost from this 
 void DecompressMesh(
-	uint32_t* triangles,
-	uint32_t triangleCount,
-	uint32_t vertexAttributeCount,
-	int16_t* vertexAttributes,
-	ReadBitstream& input );
+    uint32_t* triangles,
+    uint32_t triangleCount,
+    uint32_t vertexAttributeCount,
+    int16_t* vertexAttributes,
+    ReadBitstream& input );
 
 // Same as above but 32 bit indices.
 void DecompressMesh(
-	uint16_t* triangles,
-	uint32_t triangleCount,
-	uint32_t vertexAttributeCount,
-	int16_t* vertexAttributes,
-	ReadBitstream& input );
+    uint16_t* triangles,
+    uint32_t triangleCount,
+    uint32_t vertexAttributeCount,
+    int16_t* vertexAttributes,
+    ReadBitstream& input );
 
 
-#endif // -- INDEX_BUFFER_DECOMPRESSION_H__
+#endif // -- MESH_DECOMPRESSION_H__

@@ -34,7 +34,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define WBS_INLINE __forceinline
 #else
 #define WBS_INLINE inline
-#endif 
+#endif
 
 #if defined (_MSC_VER)
 
@@ -46,16 +46,16 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // Used for prefix coding tables.
 struct PrefixCode
 {
-	uint32_t code;
-	uint32_t bitLength;
+    uint32_t code;
+    uint32_t bitLength;
 };
 
-// Very simple bitstream for writing that will grow to accomodate written bits. 
+// Very simple bitstream for writing that will grow to accommodate written bits.
 class WriteBitstream
 {
 public:
 
-    // Construct the bit stream with an initial buffer capacity - should be a multiple of 8 and > 0 
+    // Construct the bit stream with an initial buffer capacity - should be a multiple of 8 and > 0
     WriteBitstream( size_t initialBufferCapacity = 16 )
     {
         m_bufferCursor =
@@ -80,7 +80,7 @@ public:
     // Write a V int to the stream.
     void WriteVInt( uint32_t value );
 
-    // Get the size in bytes 
+    // Get the size in bytes
     size_t ByteSize() const { return ( m_size + 7 ) >> 3; }
 
     // Finish writing by flushing the buffer.
@@ -89,24 +89,24 @@ public:
     // Get the raw data for this buffer.
     const uint8_t* RawData() const { return m_buffer; }
 
-	// Write a prefix code from the coding table to the stream.
-	template <typename Ty>
-	void WritePrefixCode( Ty input, const PrefixCode* codes );
+    // Write a prefix code from the coding table to the stream.
+    template <typename Ty>
+    void WritePrefixCode( Ty input, const PrefixCode* codes );
 
-	// Encode using an zig-zag expontential golomb encoding - note, we take a 32bit int value here,
-	// but the limit (where k 0 is valid to the full bit size of 31) for encoding is 31bit values from -1073741824 to 1073741823
-	// Returns the index of the first set bit in the zigzag code + 1 of value (useful for calculating optimal ks)
-	uint32_t WriteExponentialGolomb( int32_t value, uint32_t k );
-	
+    // Encode using an zig-zag expontential golomb encoding - note, we take a 32bit int value here,
+    // but the limit (where k 0 is valid to the full bit size of 31) for encoding is 31bit values from -1073741824 to 1073741823
+    // Returns the index of the first set bit in the zigzag code + 1 of value (useful for calculating optimal ks)
+    uint32_t WriteExponentialGolomb( int32_t value, uint32_t k );
+    
 private:
 
     // If we need to grow the buffer.
     void GrowBuffer();
 
-	// Input can not be 0. Calculates floor( log2( input ) ) 
-	static uint32_t Log2( uint32_t input );
+    // Input can not be 0. Calculates floor( log2( input ) ) 
+    static uint32_t Log2( uint32_t input );
 
-    // Not copyable 
+    // Not copyable
     WriteBitstream( const WriteBitstream& );
 
     // Not assignable
@@ -125,40 +125,40 @@ WBS_INLINE uint32_t WriteBitstream::Log2( uint32_t input )
 {
 #if defined ( _MSC_VER )
 
-	unsigned long result;
+    unsigned long result;
 
-	_BitScanReverse( &result, input );
+    _BitScanReverse( &result, input );
 
-	return static_cast< uint32_t >( result );
+    return static_cast< uint32_t >( result );
 
 #elif defined( __GNUC__ ) || defined( __clang__ )
 
-	return static_cast< uint32_t >( 31 - __builtin_clz( static_cast< unsigned int >( m_bitBuffer ) ) );
+    return static_cast< uint32_t >( 31 - __builtin_clz( static_cast< unsigned int >( m_bitBuffer ) ) );
 
 #else
 
-	uint32_t result = ( input > 0xFFFF ) << 4; 
+    uint32_t result = ( input > 0xFFFF ) << 4;
 
-	input >>= result;
+    input >>= result;
 
-	// This code should be a branchless count for the trailing 0 bits on pretty much every platform.
-	uint32_t shift0 = ( input > 0xFF ) << 3;
-	
-	input >>= shift0;
-	result |= shift0;
+    // This code should be a branchless count for the trailing 0 bits on pretty much every platform.
+    uint32_t shift0 = ( input > 0xFF ) << 3;
+    
+    input >>= shift0;
+    result |= shift0;
 
-	uint32_t shift1 = ( input > 0xF ) << 2;
+    uint32_t shift1 = ( input > 0xF ) << 2;
 
-	input >>= shift1;
-	result |= shift1;
+    input >>= shift1;
+    result |= shift1;
 
-	uint32_t shift2 = ( input > 0x3 ) << 1;
+    uint32_t shift2 = ( input > 0x3 ) << 1;
 
-	input >>= shift2;
-	result |= shift2;
-	result |= input >> 1;
+    input >>= shift2;
+    result |= shift2;
+    result |= input >> 1;
 
-	return result;
+    return result;
 
 #endif
 
@@ -167,18 +167,18 @@ WBS_INLINE uint32_t WriteBitstream::Log2( uint32_t input )
 
 WBS_INLINE uint32_t WriteBitstream::WriteExponentialGolomb( int32_t value, uint32_t k )
 {
-	// encode the value into a zigzag.
-	uint32_t zigzag            = static_cast< uint32_t >( ( value << 1 ) ^ ( value >> 31 ) );
-	uint32_t bottomMask        = ( uint32_t( 1 ) << k ) - 1;
-	uint32_t topBits           = ( zigzag >> k ) + 1; // we add one to the top bits, because they will use the exp-golomb encoding which starts at 1
-	uint32_t topBitIndex       = Log2( topBits );
-	uint32_t topBitsWithoutMSB = topBits & ~( uint32_t( 1 ) << ( topBitIndex ) );
+    // encode the value into a zigzag.
+    uint32_t zigzag            = static_cast< uint32_t >( ( value << 1 ) ^ ( value >> 31 ) );
+    uint32_t bottomMask        = ( uint32_t( 1 ) << k ) - 1;
+    uint32_t topBits           = ( zigzag >> k ) + 1; // we add one to the top bits, because they will use the exp-golomb encoding which starts at 1
+    uint32_t topBitIndex       = Log2( topBits );
+    uint32_t topBitsWithoutMSB = topBits & ~( uint32_t( 1 ) << ( topBitIndex ) );
 
-	Write( zigzag & bottomMask, k + topBitIndex );
-	Write( ( topBitsWithoutMSB << 1 ) | 1, topBitIndex + 1 );
+    Write( zigzag & bottomMask, k + topBitIndex );
+    Write( ( topBitsWithoutMSB << 1 ) | 1, topBitIndex + 1 );
 
-	// Note, this part is just returning the k that this would've fit into with no value in the top bits.
-	return Log2( ( zigzag << 1 ) | 1 );
+    // Note, this part is just returning the k that this would've fit into with no value in the top bits.
+    return Log2( ( zigzag << 1 ) | 1 );
 }
 
 
@@ -270,9 +270,9 @@ WBS_INLINE void WriteBitstream::GrowBuffer()
 template <typename Ty>
 WBS_INLINE void WriteBitstream::WritePrefixCode( Ty input, const PrefixCode* codes )
 {
-	const PrefixCode& code = codes[ input ];
+    const PrefixCode& code = codes[ input ];
 
-	Write( code.code, code.bitLength );
+    Write( code.code, code.bitLength );
 }
 
 

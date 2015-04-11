@@ -38,10 +38,10 @@ enum IndexBufferCompressionFormat
     // Will take longer to compress (due to the degenerate triangle check).
     IBCF_AUTO = 2,
 
-	// Uses a similar coder to the ICBF_PER_TRIANGLE_1 coder, but does not use the edge 0 and 1 new codes
-	// Uses a prefix based entropy encoder (same family as huffman and polar codes), with fixed
-	// table coding.
-	IBCF_PER_TRIANGLE_PREFIX_ENTROPY = 3
+    // Uses a similar coder to the ICBF_PER_TRIANGLE_1 coder, but does not use the edge 0 and 1 new codes
+    // Uses a prefix based entropy encoder (same family as huffman and polar codes), with fixed
+    // table coding.
+    IBCF_PER_TRIANGLE_PREFIX_ENTROPY = 3
 };
 
 #endif // -- INDEX_BUFFER_COMPRESSION_FORMAT_H__

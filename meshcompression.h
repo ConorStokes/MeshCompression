@@ -50,44 +50,44 @@ class WriteBitstream;
 //     [in] output               - The stream that the compressed data will be written to. Note that we will not flush/finish the stream
 //                                 in case something else is going to be written after, so WriteBitstream::Finish will need to be called after this.
 void CompressMesh( 
-	const uint16_t* triangles, 
-	uint32_t triangleCount, 
-	uint32_t* vertexRemap, 
-	uint32_t vertexCount, 
-	uint32_t vertexAttributeCount, 
-	const int32_t* vertexAttributes, 
-	WriteBitstream& output );
+    const uint16_t* triangles, 
+    uint32_t triangleCount, 
+    uint32_t* vertexRemap, 
+    uint32_t vertexCount, 
+    uint32_t vertexAttributeCount, 
+    const int32_t* vertexAttributes, 
+    WriteBitstream& output );
 
 // Same as above but 32bit indices.
 void CompressMesh(
-	const uint32_t* triangles,
-	uint32_t triangleCount,
-	uint32_t* vertexRemap,
-	uint32_t vertexCount,
-	uint32_t vertexAttributeCount,
-	const int32_t* vertexAttributes,
-	WriteBitstream& output );
+    const uint32_t* triangles,
+    uint32_t triangleCount,
+    uint32_t* vertexRemap,
+    uint32_t vertexCount,
+    uint32_t vertexAttributeCount,
+    const int32_t* vertexAttributes,
+    WriteBitstream& output );
 
 // Same as above but 16bit indices and 16 bit attributes.
 // Recommended maximum range for vertex attributes it -2^14 to 2^14 - 1, if you wish to use the 16bit decoder.
 void CompressMesh(
-	const uint16_t* triangles,
-	uint32_t triangleCount,
-	uint32_t* vertexRemap,
-	uint32_t vertexCount,
-	uint32_t vertexAttributeCount,
-	const int16_t* vertexAttributes,
-	WriteBitstream& output );
+    const uint16_t* triangles,
+    uint32_t triangleCount,
+    uint32_t* vertexRemap,
+    uint32_t vertexCount,
+    uint32_t vertexAttributeCount,
+    const int16_t* vertexAttributes,
+    WriteBitstream& output );
 
 // Same as above but 32bit indices and 16 bit attributes.
 // Recommended maximum range for vertex attributes it -2^14 to 2^14 - 1, if you wish to use the 16bit decoder.
 void CompressMesh(
-	const uint32_t* triangles,
-	uint32_t triangleCount,
-	uint32_t* vertexRemap,
-	uint32_t vertexCount,
-	uint32_t vertexAttributeCount,
-	const int16_t* vertexAttributes,
-	WriteBitstream& output );
+    const uint32_t* triangles,
+    uint32_t triangleCount,
+    uint32_t* vertexRemap,
+    uint32_t vertexCount,
+    uint32_t vertexAttributeCount,
+    const int16_t* vertexAttributes,
+    WriteBitstream& output );
 
-#endif
+#endif // -- MESH_COMPRESSION_H__

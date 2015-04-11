@@ -28,6 +28,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <stdint.h>
 
+
 // This is the k sized used for encoding the first vertex in a NEW NEW NEW case.
 // It's not really that important, as it is a rare case, but this value 
 // is definitely not optimal.
@@ -36,16 +37,17 @@ const uint32_t EXP_GOLOMB_FIRST_NEW_K = 15;
 // Edge in the edge fifo with an extra vertex for the opposing triangle.
 struct EdgeTriangle
 {
-	void set( uint32_t f, uint32_t s, uint32_t t )
-	{
-		first = f;
-		second = s;
-		third = t;
-	}
+    void set( uint32_t f, uint32_t s, uint32_t t )
+    {
+        first = f;
+        second = s;
+        third = t;
+    }
 
-	uint32_t first;
-	uint32_t second;
-	uint32_t third;
+    uint32_t first;
+    uint32_t second;
+    uint32_t third;
+
 };
 
-#endif 
+#endif // -- MESH_COMPRESSION_CONSTANTS_H__
