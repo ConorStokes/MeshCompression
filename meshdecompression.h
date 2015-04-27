@@ -34,7 +34,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // Note, vertex attributes come out in their quantitized form, as they went in to compress mesh
 // All vertex attributes use delta coding using either a parallelogram predictor (for edge cache hits)
 // or another vertex in the triangle (except for NEW NEW NEW cases, where the first vertex is encoded in absolute terms).
-// Recommended maximum range for attributes it -2^29 to 2^29 - 1 
+// Recommended maximum range for attributes is -2^29 to 2^29 - 1. 
 // Parameters: 
 //     [out] triangles            - Triangle list index buffer (3 indices to vertices per triangle), output from the decompression - 16bit indices
 //     [in]  triangleCount        - The number of triangles to decompress.
@@ -56,9 +56,7 @@ void DecompressMesh(
     int32_t* vertexAttributes,
     ReadBitstream& input );
 
-// Same as above but 32 bit indices and 16 bit vertex attributes.
-// For 16 bit vertex attributes, the maximum recommended range is -2^14 to 2^14 - 1 
-// While this is inside the normal 16 bit range, the decoding gets a performance boost from this 
+// Same as above but 32 bit indices and 16 bit vertex attributes. 
 void DecompressMesh(
     uint32_t* triangles,
     uint32_t triangleCount,

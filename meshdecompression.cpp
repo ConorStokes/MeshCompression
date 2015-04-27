@@ -41,24 +41,6 @@ static const uint32_t TRIANGLE_MAX_CODE_LENGTH = 7;
 
 #include "indexbufferdecodetables.h"
 
-template < typename AttributeType >
-AttributeType DecodeExponentialGolomb( ReadBitstream& input, const uint32_t k, /* out */ uint32_t& bitSize )
-{
-    return 0;
-}
-
-template <>
-MDC_INLINE int16_t DecodeExponentialGolomb< int16_t >( ReadBitstream& input, const uint32_t k, /* out */ uint32_t& bitSize )
-{
-    return input.DecodeExponentialGolomb16( k, bitSize );
-}
-
-template <>
-MDC_INLINE int32_t DecodeExponentialGolomb< int32_t >( ReadBitstream& input, const uint32_t k, /* out */ uint32_t& bitSize )
-{
-    return input.DecodeExponentialGolomb( k, bitSize );
-}
-
 // Decompress triangle codes using prefix coding based on static tables.
 template <typename IndiceType, typename AttributeType>
 void DecompressMeshPrefix( 
@@ -66,10 +48,11 @@ void DecompressMeshPrefix(
     uint32_t triangleCount, 
     uint32_t vertexAttributeCount,
     AttributeType* vertexAttributes,
-    ReadBitstream& input )
+    ReadBitstream& input2 )
 {
     EdgeTriangle edgeFifo[ EDGE_FIFO_SIZE ];
     uint32_t     vertexFifo[ VERTEX_FIFO_SIZE ];
+    ReadBitstream input( input2 );
 
     uint32_t          edgesRead    = 0;
     uint32_t          verticesRead = 0;
@@ -114,13 +97,15 @@ void DecompressMeshPrefix(
 
             for ( ; newVertex < endAttributes; ++adjacent1Attribute, ++adjacent2Attribute, ++opposingAttribute, ++newVertex, ++k )
             {
-                AttributeType predicted = *adjacent2Attribute + ( *adjacent1Attribute  - *opposingAttribute );
-                uint32_t kEstimate;
+                uint32_t zigzagDelta = input.DecodeUniversal( *k >> 16 );
+                uint32_t kEstimate   = ReadBitstream::Log2( ( zigzagDelta << 1 ) | 1 );
 
-                *newVertex = predicted + DecodeExponentialGolomb< AttributeType >( input, *k >> 16, kEstimate );
+                *k = ( *k * 7 + ( kEstimate << 16 ) ) >> 3;
 
-                // fixed point exponential moving average with alpha 0.0625 (equivalent to N being 31)
-                *k = ( *k * 15 + ( kEstimate << 16 ) ) >> 4;
+                int32_t  delta     = ReadBitstream::DecodeZigZag( zigzagDelta );
+                int32_t  predicted = int32_t( *adjacent2Attribute ) + int32_t( *adjacent1Attribute ) - int32_t( *opposingAttribute );
+
+                *newVertex = static_cast< AttributeType >( predicted + delta );
             }
 
             ++newVertices;
@@ -172,12 +157,11 @@ void DecompressMeshPrefix(
 
             for ( ; newVertex < vert0End; ++newVertex, ++k )
             {
-                uint32_t dummy;
-                AttributeType readVert0 = DecodeExponentialGolomb< AttributeType >( input, EXP_GOLOMB_FIRST_NEW_K, dummy );
+                int32_t readVert0 = input.DecodeUniversalZigZag( EXP_GOLOMB_FIRST_NEW_K );
 
-                *newVertex                                    = readVert0;
-                *( newVertex + vertexAttributeCount )         = DecodeExponentialGolomb< AttributeType >( input, ( *k >> 16 ), dummy ) + readVert0;
-                *( newVertex + ( 2 * vertexAttributeCount ) ) = DecodeExponentialGolomb< AttributeType >( input, ( *k >> 16 ), dummy ) + readVert0;
+                *newVertex                                    = static_cast< AttributeType >( readVert0 );
+                *( newVertex + vertexAttributeCount )         = static_cast< AttributeType >( input.DecodeUniversalZigZag( *k >> 16 ) + readVert0 );
+                *( newVertex + ( 2 * vertexAttributeCount ) ) = static_cast< AttributeType >( input.DecodeUniversalZigZag( *k >> 16 ) + readVert0 );
             }
             
             newVertex += 2 * vertexAttributeCount;
@@ -206,11 +190,10 @@ void DecompressMeshPrefix(
 
             for ( ; newVertex < vert0End; ++newVertex, ++vert2, ++k )
             {
-                AttributeType readVert2  = *vert2;
-                uint32_t dummy;
+                int32_t readVert2  = *vert2;
 
-                *newVertex                           = DecodeExponentialGolomb< AttributeType >( input, ( *k >> 16 ), dummy ) + readVert2;
-                *(newVertex + vertexAttributeCount ) = DecodeExponentialGolomb< AttributeType >( input, ( *k >> 16 ), dummy ) + readVert2;
+                *newVertex                            = static_cast< AttributeType >( input.DecodeUniversalZigZag( *k >> 16 ) + readVert2 );
+                *( newVertex + vertexAttributeCount ) = static_cast< AttributeType >( input.DecodeUniversalZigZag( *k >> 16 ) + readVert2 );
             }
 
             newVertex += vertexAttributeCount;
@@ -240,11 +223,10 @@ void DecompressMeshPrefix(
 
             for ( ; newVertex < vert0End; ++newVertex, ++vert2, ++k )
             {
-                AttributeType readVert2 = *vert2;
-                uint32_t dummy;
+                int32_t readVert2 = *vert2;
 
-                *newVertex                           = DecodeExponentialGolomb< AttributeType >( input, ( *k >> 16 ), dummy ) + readVert2;
-                *(newVertex + vertexAttributeCount ) = DecodeExponentialGolomb< AttributeType >( input, ( *k >> 16 ), dummy ) + readVert2;
+                *newVertex                            = static_cast< AttributeType >( input.DecodeUniversalZigZag( *k >> 16 ) + readVert2 );
+                *( newVertex + vertexAttributeCount ) = static_cast< AttributeType >( input.DecodeUniversalZigZag( *k >> 16 ) + readVert2 );
             }
 
             newVertex += vertexAttributeCount;
@@ -273,11 +255,9 @@ void DecompressMeshPrefix(
 
             for ( ; newVertex < vert0End; ++newVertex, ++vert1, ++k )
             {
-                uint32_t dummy;
-
-                *newVertex = DecodeExponentialGolomb< AttributeType >( input, ( *k >> 16 ), dummy ) + *vert1;
+                *newVertex = static_cast< AttributeType >( input.DecodeUniversalZigZag( *k >> 16 ) + *vert1 );
             }
-            
+
             ++verticesRead;
             ++newVertices;
 
@@ -303,11 +283,9 @@ void DecompressMeshPrefix(
 
             for ( ; newVertex < vert0End; ++newVertex, ++vert1, ++k )
             {
-                uint32_t dummy;
-
-                *newVertex = DecodeExponentialGolomb< AttributeType >( input, ( *k >> 16 ), dummy ) + *vert1;
+                *newVertex = static_cast< AttributeType >( input.DecodeUniversalZigZag( *k >> 16 ) + *vert1 );
             }
-            
+
             verticesRead += 2;
             ++newVertices;
 
@@ -333,11 +311,9 @@ void DecompressMeshPrefix(
 
             for ( ; newVertex < vert0End; ++newVertex, ++vert2, ++k )
             {
-                uint32_t dummy;
-
-                *newVertex = DecodeExponentialGolomb< AttributeType >( input, ( *k >> 16 ), dummy ) + *vert2;
+                *newVertex = static_cast< AttributeType >( input.DecodeUniversalZigZag( *k >> 16 ) + *vert2 );
             }
-            
+
             verticesRead += 2;
             ++newVertices;
 
@@ -364,9 +340,7 @@ void DecompressMeshPrefix(
 
             for ( ; newVertex < vert0End; ++newVertex, ++vert1, ++k )
             {
-                uint32_t dummy;
-
-                *newVertex = DecodeExponentialGolomb< AttributeType >( input, ( *k >> 16 ), dummy ) + *vert1;
+                *newVertex = static_cast< AttributeType >( input.DecodeUniversalZigZag( *k >> 16 ) + *vert1 );
             }
                         
             verticesRead += 3;

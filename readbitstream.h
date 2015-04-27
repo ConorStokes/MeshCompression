@@ -93,18 +93,22 @@ public:
     // Also note, this uses 4 byte reads/only partially refills the bit-buffer.
     uint32_t Decode( const PrefixCodeTableEntry* table, const uint32_t maximumCodeLength );
 
-    // Decode a zig-zag encoded exponential golomb code, where the range of valid values is -1073741824 to 1073741823
-    // bitSize will be the number of bits used in the zig-zag encoded version.
-    int32_t DecodeExponentialGolomb( const uint32_t k, /* out */ uint32_t& bitSize );
+    // Decode a unsigned integer encoded exponential golomb like universal code, where the range of valid values is 0 to 2147483647,
+    // read from the bit stream.
+    uint32_t DecodeUniversal( uint32_t k );
 
-    // Decode a zig-zag encoded exponential golomb code, where the range of valid values is -16384 to 16383
-    // bitSize will be the number of bits used in the zig-zag encoded version.
-    int16_t DecodeExponentialGolomb16( const uint32_t k, /* out */ uint32_t& bitSize );
+    // Decode a signed integer encoded exponential golomb like universal code (with a zig zag encoding for sign), where the range of valid values is -1073741824 to 1073741823,
+    // read from the bit stream.
+    int32_t DecodeUniversalZigZag( uint32_t k );
 
-private:
+    // Decode a signed integer from an unsigned zig zag (note, this doesn't read from the stream, we should consider naming/scope here)
+    static int32_t DecodeZigZag( uint32_t input );
 
     // input can not be 0.
     static uint32_t Log2( uint32_t input );
+
+private:
+
 
     uint64_t m_bitBuffer;
 
@@ -116,6 +120,11 @@ private:
 
 };
 
+
+RBS_INLINE int32_t ReadBitstream::DecodeZigZag( uint32_t input )
+{
+    return static_cast< int32_t >( ( input >> 1 ) ^ -static_cast< int32_t >( input & 1 ) );
+}
 
 RBS_INLINE uint32_t ReadBitstream::Log2( uint32_t input )
 {
@@ -157,11 +166,18 @@ RBS_INLINE uint32_t ReadBitstream::Log2( uint32_t input )
     return result;
 
 #endif
-
 }
 
 
-RBS_INLINE int32_t ReadBitstream::DecodeExponentialGolomb( const uint32_t k, uint32_t& bitsRequired )
+// Decode a signed integer encoded exponential golomb like universal code (with a zig zag encoding for sign), where the range of valid values is -1073741824 to 1073741823,
+// read from the bit stream.
+RBS_INLINE int32_t ReadBitstream::DecodeUniversalZigZag( uint32_t k )
+{
+    return DecodeZigZag( DecodeUniversal( k ) );
+}
+
+
+RBS_INLINE uint32_t ReadBitstream::DecodeUniversal( uint32_t k )
 {
     if (m_bitsLeft < 32)
     {
@@ -186,10 +202,6 @@ RBS_INLINE int32_t ReadBitstream::DecodeExponentialGolomb( const uint32_t k, uin
         m_bitsLeft  += 32;
         m_cursor    += 4;
     }
-
-    uint32_t bottomBits = m_bitBuffer & ( ( uint32_t( 1 ) << k ) - 1 );
-
-    m_bitBuffer >>= k;
 
 #if defined( _MSC_VER )
 
@@ -223,122 +235,15 @@ RBS_INLINE int32_t ReadBitstream::DecodeExponentialGolomb( const uint32_t k, uin
 
     uint32_t topBitPlus1Count = leadingBitCount + 1;
 
-    m_bitsLeft   -= k + topBitPlus1Count;
+    // take the bits off the bitstream
     m_bitBuffer >>= topBitPlus1Count;
+    m_bitsLeft   -= topBitPlus1Count;
 
-    if ( m_bitsLeft < 32 )
-    {
-#if defined( RBS_LITTLE_ENDIAN_UNALIGNED )
+    uint32_t leadingBitCountNotZero = leadingBitCount != 0;
+    uint32_t bitLength              = k + leadingBitCount;
+    uint32_t bitsToRead             = bitLength - leadingBitCountNotZero;
 
-        // We're on x86/x64, so we're little endian and can do an un-aligned read.
-        uint64_t intermediateBitBuffer = *( reinterpret_cast< const uint32_t* >( m_cursor ) );
-
-#else
-
-        // other processor architecture, unknown endian/unaligned read support
-        uint64_t intermediateBitBuffer = m_cursor[ 0 ];
-
-        intermediateBitBuffer |= static_cast< uint64_t >( m_cursor[ 1 ] ) << 8;
-        intermediateBitBuffer |= static_cast< uint64_t >( m_cursor[ 2 ] ) << 16;
-        intermediateBitBuffer |= static_cast< uint64_t >( m_cursor[ 3 ] ) << 24;
-
-#endif
-
-        m_bitBuffer |= intermediateBitBuffer << m_bitsLeft;
-
-        m_bitsLeft  += 32;
-        m_cursor    += 4;
-    }
-    
-    uint32_t topBitsPlus1MSB  = uint32_t( 1 ) << leadingBitCount;
-    uint32_t topBits          = ( ( m_bitBuffer & ( topBitsPlus1MSB - 1 ) ) | topBitsPlus1MSB ) - 1;
-    uint32_t zigzag           = bottomBits | ( topBits << k );
-
-    m_bitBuffer >>= leadingBitCount;
-    m_bitsLeft   -= leadingBitCount;
-
-    bitsRequired = Log2( ( zigzag << 1 ) | 1 );
-
-    // deconvert from zigzag encoding
-    return static_cast< int32_t >( ( zigzag >> 1 ) ^ -static_cast< int32_t >( zigzag & 1 ) );
-}
-
-
-RBS_INLINE int16_t ReadBitstream::DecodeExponentialGolomb16( const uint32_t k, uint32_t& bitsRequired )
-{
-    if ( m_bitsLeft < 32 )
-    {
-#if defined( RBS_LITTLE_ENDIAN_UNALIGNED )
-
-        // We're on x86/x64, so we're little endian and can do an un-aligned read.
-        uint64_t intermediateBitBuffer = *( reinterpret_cast< const uint32_t* >( m_cursor ) );
-
-#else
-
-        // other processor architecture, unknown endian/unaligned read support
-        uint64_t intermediateBitBuffer = m_cursor[ 0 ];
-
-        intermediateBitBuffer |= static_cast< uint64_t >( m_cursor[ 1 ] ) << 8;
-        intermediateBitBuffer |= static_cast< uint64_t >( m_cursor[ 2 ] ) << 16;
-        intermediateBitBuffer |= static_cast< uint64_t >( m_cursor[ 3 ] ) << 24;
-
-#endif
-
-        m_bitBuffer |= intermediateBitBuffer << m_bitsLeft;
-
-        m_bitsLeft += 32;
-        m_cursor   += 4;
-    }
-
-    uint32_t bottomBits = m_bitBuffer & ( ( uint32_t( 1 ) << k ) - 1 );
-
-    m_bitBuffer >>= k;
-
-#if defined( _MSC_VER )
-
-    unsigned long leadingBitCount;
-
-    // find the first set bit searching from the LSB
-    // note, we don't need to worry about bit-buffer being zero, because the exp-golomb code will
-    // always have a bit set before 32bits
-    _BitScanForward( &leadingBitCount, static_cast< unsigned long >( m_bitBuffer ) );
-
-#elif defined( __GNUC__ ) || defined( __clang__ )
-
-    unsigned int leadingBitCount = __builtin_ctz( static_cast< unsigned int >( m_bitBuffer ) );
-
-#else
-
-    // This code should be a branchless count for the trailing 0 bits on pretty much every platform.
-    uint32_t leadingBitCount = 16;
-    uint32_t copiedBitBuffer = static_cast< uint32_t >( m_bitBuffer & 0xFFFFFFFF );
-
-    copiedBitBuffer &= static_cast< uint32_t >( -static_cast<int32_t>( copiedBitBuffer ) );
-
-    leadingBitCount -= ( copiedBitBuffer > 0 );
-    leadingBitCount -= ( ( copiedBitBuffer & 0x00FF ) > 0 ) << 3;
-    leadingBitCount -= ( ( copiedBitBuffer & 0x0F0F ) > 0 ) << 2;
-    leadingBitCount -= ( ( copiedBitBuffer & 0x3333 ) > 0 ) << 1;
-    leadingBitCount -= ( copiedBitBuffer & 0x5555 ) > 0;
-
-#endif
-
-    uint32_t topBitPlus1Count = leadingBitCount + 1;
-
-    m_bitsLeft   -= k + topBitPlus1Count;
-    m_bitBuffer >>= topBitPlus1Count;
-
-    uint32_t topBitsPlus1MSB = uint32_t( 1 ) << leadingBitCount;
-    uint32_t topBits         = ( ( m_bitBuffer & ( topBitsPlus1MSB - 1 ) ) | topBitsPlus1MSB ) - 1;
-    uint32_t zigzag          = bottomBits | ( topBits << k );
-
-    m_bitBuffer >>= leadingBitCount;
-    m_bitsLeft   -= leadingBitCount;
-
-    bitsRequired = Log2( ( zigzag << 1 ) | 1 );
-
-    // deconvert from zigzag encoding
-    return static_cast< int16_t >( ( zigzag >> 1 ) ^ -static_cast< int32_t >( zigzag & 1 ) );
+    return Read( bitsToRead ) | ( leadingBitCountNotZero << bitsToRead );
 }
 
 

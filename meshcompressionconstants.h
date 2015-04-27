@@ -39,9 +39,9 @@ struct EdgeTriangle
 {
     void set( uint32_t f, uint32_t s, uint32_t t )
     {
-        first = f;
+        first  = f;
         second = s;
-        third = t;
+        third  = t;
     }
 
     uint32_t first;

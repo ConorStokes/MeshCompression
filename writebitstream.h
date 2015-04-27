@@ -29,6 +29,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <stdint.h>
 #include <stdlib.h>
 #include <memory.h>
+#include <assert.h>
 
 #ifdef _MSC_VER
 #define WBS_INLINE __forceinline
@@ -93,19 +94,27 @@ public:
     template <typename Ty>
     void WritePrefixCode( Ty input, const PrefixCode* codes );
 
-    // Encode using an zig-zag expontential golomb encoding - note, we take a 32bit int value here,
-    // but the limit (where k 0 is valid to the full bit size of 31) for encoding is 31bit values from -1073741824 to 1073741823
-    // Returns the index of the first set bit in the zigzag code + 1 of value (useful for calculating optimal ks)
-    uint32_t WriteExponentialGolomb( int32_t value, uint32_t k );
-    
-private:
+    // Write exponential golomb like universal code, with a range 0..2^31 - 1, 
+    // k is the fixed number of least significant bits encoded (bits above k will be variable encoded, with a unary code prefix describing their number)
+    // k can be 0 to 31
+    // Returns the k that would provide the smallest encoding for this number.
+    uint32_t WriteUniversal( uint32_t value, uint32_t k );
 
-    // If we need to grow the buffer.
-    void GrowBuffer();
+    // Write exponential golomb like universal code, with a range -2^30..2^30 - 1, same as above but uses zig zag encoding
+    // Returns the k that would provide the smallest encoding for this number.
+    uint32_t WriteUniversalZigZag( int32_t value, uint32_t k );
 
     // Input can not be 0. Calculates floor( log2( input ) ) 
     static uint32_t Log2( uint32_t input );
 
+    // Encode a signed 32-bit integer to an unsigned 32bit integer using zig-zag encoding.
+    static uint32_t EncodeZigZag( int32_t input );
+
+private:
+
+    // If we need to grow the buffer.
+    void GrowBuffer();
+    
     // Not copyable
     WriteBitstream( const WriteBitstream& );
 
@@ -119,6 +128,18 @@ private:
     uint8_t*  m_bufferEnd;
     uint32_t  m_bitsLeft;
 };
+
+
+WBS_INLINE uint32_t WriteBitstream::EncodeZigZag( int32_t input )
+{
+    return static_cast< uint32_t >( ( input << 1 ) ^ ( input >> 31 ) );
+}
+
+
+WBS_INLINE uint32_t WriteBitstream::WriteUniversalZigZag( int32_t input, uint32_t k )
+{
+    return WriteUniversal( EncodeZigZag( input ), k );
+}
 
 
 WBS_INLINE uint32_t WriteBitstream::Log2( uint32_t input )
@@ -165,20 +186,27 @@ WBS_INLINE uint32_t WriteBitstream::Log2( uint32_t input )
 }
 
 
-WBS_INLINE uint32_t WriteBitstream::WriteExponentialGolomb( int32_t value, uint32_t k )
+WBS_INLINE uint32_t WriteBitstream::WriteUniversal( uint32_t value, uint32_t k )
 {
-    // encode the value into a zigzag.
-    uint32_t zigzag            = static_cast< uint32_t >( ( value << 1 ) ^ ( value >> 31 ) );
-    uint32_t bottomMask        = ( uint32_t( 1 ) << k ) - 1;
-    uint32_t topBits           = ( zigzag >> k ) + 1; // we add one to the top bits, because they will use the exp-golomb encoding which starts at 1
-    uint32_t topBitIndex       = Log2( topBits );
-    uint32_t topBitsWithoutMSB = topBits & ~( uint32_t( 1 ) << ( topBitIndex ) );
+    assert( k < 32 );
+    assert( value < 0x80000000 );
 
-    Write( zigzag & bottomMask, k + topBitIndex );
-    Write( ( topBitsWithoutMSB << 1 ) | 1, topBitIndex + 1 );
+    uint32_t bits = Log2( ( value << 1 ) | 1 );
 
-    // Note, this part is just returning the k that this would've fit into with no value in the top bits.
-    return Log2( ( zigzag << 1 ) | 1 );
+    if ( bits <= k )
+    {
+        Write( 1, 1 );
+        Write( value, k );
+    }
+    else
+    {
+        uint32_t bitsMinusK = bits - k;
+
+        Write( uint32_t( 1 ) << bitsMinusK, bitsMinusK + 1 );
+        Write( value & ~( uint32_t( 1 ) << ( bits - 1 ) ), bits - 1 );
+    }
+
+    return bits;
 }
 
 
