@@ -442,6 +442,8 @@ void DecompressMeshPrefix(
 
     // Skip over padding at the end, put in so a short prefix code (1 bit) doesn't cause an overflow
     input.Read( 32 );
+
+    input2 = input;
 }
 
 // 32 bit indice/32bit attribute decompression
